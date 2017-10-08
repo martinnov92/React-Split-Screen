@@ -7,16 +7,21 @@
     overflow: hidden;
 }
 
+.rss-layout-dragging {
+    cursor: col-resize;
+}
+
 .rss-pane {
     position: relative;
     flex-grow: 1;
     flex-shrink: 1;
     flex-basis: auto;
     flex: 1 1 auto;
+    overflow: hidden; /* MUST BE OVERFLOW HIDDEN OTHERWISE UNEXPECTED BEHAVIOUR*/
 }
 
 .rss-resizer {
-    width: 10px;
+    min-width: 10px;
     display: flex;
     justify-content: center;
     align-items: center;
