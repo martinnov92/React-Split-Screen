@@ -77,10 +77,11 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         
         // add calculation on resize
         window.addEventListener('resize', () => false);
-        window.addEventListener('RSSDragging', () => {
-            if (!this.state.dragging) {
-                this.getPanesRatio();
-                this.getInitPaneSize();
+        window.addEventListener('RSSDragging', (evt: any) => {
+            if (!this.state.dragging && this.props.vertical === evt.detail.vertical) {
+                const ratio = this.getPanesRatio();
+                console.log(ratio);
+                this.getInitPaneSize(ratio.paneOne, '%');
             }
         });
     }
@@ -150,7 +151,11 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         ? layoutRect.width - resizerRect.width - primaryPaneSize
         : layoutRect.height - resizerRect.height - primaryPaneSize;
 
-        const event = new CustomEvent('RSSDragging');
+        const event = new CustomEvent('RSSDragging', {
+            detail: {
+                vertical
+            }
+        });
         window.dispatchEvent(event);
 
         this.setState({
@@ -224,7 +229,7 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
     }
 
     // get init width of pane (componentDidMount)
-    getInitPaneSize() {
+    getInitPaneSize(size?: number, ext?: string) {
         const { primaryPaneInitSize, vertical } = this.props;
         const testPX = new RegExp('%', 'gi');
         let initSize = 0;
@@ -245,7 +250,7 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         }
 
         // get calculated width of primary pane
-        const primaryPaneSize = this.getCalculatedInitSize(initSize, sizeExt);
+        const primaryPaneSize = this.getCalculatedInitSize(size || initSize, ext || sizeExt);
         const secondaryPaneSize =
             vertical
             ? this.getLayoutBoundingClientRect().width - this.getResizerBoundingClientRect().width - primaryPaneSize
