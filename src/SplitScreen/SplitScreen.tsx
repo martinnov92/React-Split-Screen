@@ -39,6 +39,10 @@ interface SplitScreenState {
     secondaryPaneSize?: number;
     mouseInResizer?: number;
     dragging?: boolean;
+    ratio?: {
+        paneOne: number,
+        paneTwo: number
+    };
 }
 
 export default class SplitScreen extends React.Component<SplitScreenProps, SplitScreenState> {
@@ -58,7 +62,11 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
             mouseInResizer: 0,
             primaryPaneSize: 0,
             secondaryPaneSize: 0,
-            dragging: false
+            dragging: false,
+            ratio: {
+                paneOne: 0,
+                paneTwo: 0
+            }
         };
 
         this.handleMouseUp = this.handleMouseUp.bind(this);
@@ -77,11 +85,10 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         
         // add calculation on resize
         window.addEventListener('resize', () => false);
+        window.addEventListener('RSSStartDragging', this.getPanesRatio);
         window.addEventListener('RSSDragging', (evt: any) => {
             if (!this.state.dragging && this.props.vertical === evt.detail.vertical) {
-                const ratio = this.getPanesRatio();
-                console.log(ratio);
-                this.getInitPaneSize(ratio.paneOne, '%');
+                this.getInitPaneSize(this.state.ratio && this.state.ratio.paneOne, '%');
             }
         });
     }
@@ -90,6 +97,9 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         if (evt.button === 2 || !this.props.allowResize) {
             return;
         }
+
+        const event = new CustomEvent('RSSStartDragging');
+        window.dispatchEvent(event);
 
         // when div is pressed => add event listeners
         document.addEventListener('mousemove', this.handleMouseMove);
@@ -190,7 +200,7 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         const secondaryPaneStyle = {
             flexBasis: `${secondaryPaneSize}px`
         };
-
+        console.log(this.state);
         return (
             <div
                 className={layoutClassName}
@@ -316,6 +326,8 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
             paneTwo: ((secondaryPaneSize || 0) * 100) / layoutSize
         };
 
-        return ratio;
+        this.setState({
+            ratio
+        });
     }
 }
