@@ -120,6 +120,7 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         const { vertical } = this.props;
         // const { mouseInResizer } = this.state;
         const layoutRect = this.getLayoutBoundingClientRect();
+        const resizerRect = this.getResizerBoundingClientRect();
         let primaryPaneSize = 0;
         let secondaryPaneSize = 0;
 
@@ -137,7 +138,10 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
             }
         }
 
-        secondaryPaneSize = vertical ? layoutRect.width - primaryPaneSize : layoutRect.height - primaryPaneSize;
+        secondaryPaneSize = vertical
+        ? layoutRect.width - resizerRect.width - primaryPaneSize
+        : layoutRect.height - resizerRect.height - primaryPaneSize;
+
         this.setState({
             primaryPaneSize,
             secondaryPaneSize
@@ -171,7 +175,6 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
             flexBasis: `${secondaryPaneSize}px`
         };
 
-        console.log(primaryPaneSize, secondaryPaneSize);
         return (
             <div
                 className={layoutClassName}
@@ -250,11 +253,9 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
 
         if (type === '%') {
             // get calculated primary pane width from percentage
-            if (vertical) {
-                calculatedSize = (getSplitterSize.width * (size / 100)) - (this.getResizerBoundingClientRect().width / 2);
-            } else {
-                calculatedSize = (getSplitterSize.height * (size / 100)) - (this.getResizerBoundingClientRect().height / 2);
-            }
+            calculatedSize = vertical
+            ? (getSplitterSize.width * (size / 100)) - (this.getResizerBoundingClientRect().width / 2)
+            : (getSplitterSize.height * (size / 100)) - (this.getResizerBoundingClientRect().height / 2);
         }
 
         if (type === 'px') {
