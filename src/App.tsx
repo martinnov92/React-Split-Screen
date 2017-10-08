@@ -5,9 +5,16 @@ class App extends React.Component {
     render() {
         return (
             <div className="App">
-                <SplitScreen>
+                <SplitScreen
+                    primaryPaneInitSize="50%"
+                >
                     <div>asdf</div>
-                    <div>asdf</div>
+                    <SplitScreen
+                        primaryPaneInitSize="50%"
+                    >
+                        <div>asdf</div>
+                        <div>asdf</div>
+                    </SplitScreen>
                 </SplitScreen>
             </div>
         );

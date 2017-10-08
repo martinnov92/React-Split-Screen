@@ -1,10 +1,17 @@
 import * as React from 'react';
 
-export default class SplitPane extends React.Component<{}, {}> {
+interface SplitPaneProps {
+    style?: object;
+}
+
+export default class SplitPane extends React.Component<SplitPaneProps, {}> {
     render() {
         return (
-            <div>
-                { this.props.children }
+            <div
+                className={`rss-pane`}
+                style={this.props.style}
+            >
+                {this.props.children}
             </div>
         );
     }

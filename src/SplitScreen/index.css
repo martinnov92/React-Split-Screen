@@ -7,6 +7,14 @@
     overflow: hidden;
 }
 
+.rss-pane {
+    position: relative;
+    flex-grow: 1;
+    flex-shrink: 1;
+    flex-basis: auto;
+    flex: 1 1 auto;
+}
+
 .rss-resizer {
     width: 10px;
     display: flex;
