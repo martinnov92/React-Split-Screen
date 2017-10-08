@@ -15,16 +15,23 @@ class App extends React.Component {
                     </div>
                     <SplitScreen
                         primaryPaneInitSize="300px"
-                        vertical
+                        vertical={false}
                     >
                         <div>
                             <div>
                                 asdf
                             </div>
                         </div>
-                        <div>
-                            <div>3. panel</div>
-                        </div>
+                        <SplitScreen
+                            primaryPaneInitSize="150px"
+                        >
+                            <div>
+                                <div>
+                                    asdf
+                                </div>
+                            </div>
+                            <div></div>
+                        </SplitScreen>
                     </SplitScreen>
                 </SplitScreen>
             </div>

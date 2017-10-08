@@ -86,10 +86,18 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         document.addEventListener('mousemove', this.handleMouseMove);
         document.addEventListener('mouseup', this.handleMouseUp);
 
+        let mouseInResizer = 0;
+        if (this.props.vertical) {
+            mouseInResizer = evt.clientX - evt.target.offsetLeft;
+        } else {
+            mouseInResizer = evt.clientY - evt.target.offsetTop;
+        }
+
         // clear selection
         unselect();
         this.setState({
-            dragging: true
+            dragging: true,
+            mouseInResizer
         });
     }
 
@@ -110,27 +118,30 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         unselect();
 
         const { vertical } = this.props;
-        const { mouseInResizer } = this.state;
+        // const { mouseInResizer } = this.state;
         const layoutRect = this.getLayoutBoundingClientRect();
+        let primaryPaneSize = 0;
+        let secondaryPaneSize = 0;
 
         if (vertical) {
+            primaryPaneSize = evt.clientX - layoutRect.left;
+
             if (evt.clientX < layoutRect.left || evt.clientX > layoutRect.right) {
                 return;
             }
         } else {
+            primaryPaneSize = evt.clientY - layoutRect.top;
+
             if (evt.clientY < layoutRect.top || evt.clientY > layoutRect.bottom) {
                 return;
             }
         }
 
-        const offsetLeft = evt.clientX - layoutRect.left;
-
+        secondaryPaneSize = vertical ? layoutRect.width - primaryPaneSize : layoutRect.height - primaryPaneSize;
         this.setState({
-            primaryPaneSize: offsetLeft,
-            secondaryPaneSize: layoutRect.width - offsetLeft
-        })
-
-        console.log(offsetLeft, mouseInResizer);
+            primaryPaneSize,
+            secondaryPaneSize
+        });
     }
 
     render() {
@@ -200,7 +211,7 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
 
     // get init width of pane (componentDidMount)
     getInitPaneSize() {
-        const { primaryPaneInitSize } = this.props;
+        const { primaryPaneInitSize, vertical } = this.props;
         const testPX = new RegExp('%', 'gi');
         let initSize = 0;
         let sizeExt = '';
@@ -220,36 +231,52 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         }
 
         // get calculated width of primary pane
-        const primaryPaneCalculatedWidth = this.getCalculatedInitSize(initSize, sizeExt);
-        const secondaryPaneCalculatedWidth =
-            this.getLayoutBoundingClientRect().width - this.getResizerBoundingClientRect().width - primaryPaneCalculatedWidth;
+        const primaryPaneSize = this.getCalculatedInitSize(initSize, sizeExt);
+        const secondaryPaneSize =
+            vertical
+            ? this.getLayoutBoundingClientRect().width - this.getResizerBoundingClientRect().width - primaryPaneSize
+            : this.getLayoutBoundingClientRect().height - this.getResizerBoundingClientRect().height - primaryPaneSize;
 
         this.setState({
-            primaryPaneSize: primaryPaneCalculatedWidth,
-            secondaryPaneSize: secondaryPaneCalculatedWidth
+            primaryPaneSize,
+            secondaryPaneSize: secondaryPaneSize
         });
     }
 
     getCalculatedInitSize(size: number = 0, type: string = 'px'): number {
         const getSplitterSize = this.getLayoutBoundingClientRect();
-        let calculatedWidth = 0;
+        const { vertical } = this.props;
+        let calculatedSize = 0;
 
         if (type === '%') {
             // get calculated primary pane width from percentage
-            calculatedWidth = (getSplitterSize.width * (size / 100)) - (this.getResizerBoundingClientRect().width / 2);
+            if (vertical) {
+                calculatedSize = (getSplitterSize.width * (size / 100)) - (this.getResizerBoundingClientRect().width / 2);
+            } else {
+                calculatedSize = (getSplitterSize.height * (size / 100)) - (this.getResizerBoundingClientRect().height / 2);
+            }
         }
 
         if (type === 'px') {
             // check if size in px is not bigger then size of splitter div
-            if (size > getSplitterSize.width) {
-                // if size is bigger, retrun only 90% of available space
-                return this.getCalculatedInitSize(90, '%');
+            if (vertical) {
+                if (size > getSplitterSize.width) {
+                    // if size is bigger, retrun only 90% of available space
+                    return this.getCalculatedInitSize(90, '%');
+                } else {
+                    calculatedSize = size;
+                }
             } else {
-                calculatedWidth = size;
+                if (size > getSplitterSize.height) {
+                    // if size is bigger, retrun only 90% of available space
+                    return this.getCalculatedInitSize(90, '%');
+                } else {
+                    calculatedSize = size;
+                }
             }
         }
 
-        return calculatedWidth;
+        return calculatedSize;
     }
 
     // get sizes

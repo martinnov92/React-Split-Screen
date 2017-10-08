@@ -7,8 +7,16 @@
     overflow: hidden;
 }
 
+.rss-horizontal {
+    flex-direction: column;
+}
+
 .rss-layout-dragging {
     cursor: col-resize;
+}
+
+.rss-horizontal.rss-layout-dragging {
+    cursor: row-resize;
 }
 
 .rss-pane {
@@ -22,6 +30,7 @@
 
 .rss-resizer {
     min-width: 10px;
+    height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -29,9 +38,25 @@
     cursor: col-resize;
 }
 
+.rss-horizontal > .rss-resizer {
+    min-width: 100%;
+    min-height: 10px;
+    max-height: 10px;
+    cursor: row-resize;
+}
+
 .rss-resizer--drag {
     width: 4px;
     height: 20px;
     border-left: 1px solid rgba(0, 0, 0, 0.0980392);
     border-right: 1px solid rgba(0, 0, 0, 0.0980392);
+}
+
+.rss-horizontal > .rss-resizer .rss-resizer--drag {
+    width: 20px;
+    height: 4px;
+    border-top: 1px solid rgba(0, 0, 0, 0.0980392);
+    border-bottom: 1px solid rgba(0, 0, 0, 0.0980392);
+    border-left: 0;
+    border-right: 0;
 }
