@@ -39,9 +39,9 @@ interface SplitScreenState {
     secondaryPaneSize?: number;
     mouseInResizer?: number;
     dragging?: boolean;
+    pristine?: boolean;
     ratio?: {
-        paneOne: number,
-        paneTwo: number
+        paneOne: number | null
     };
 }
 
@@ -63,9 +63,9 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
             primaryPaneSize: 0,
             secondaryPaneSize: 0,
             dragging: false,
+            pristine: true,
             ratio: {
-                paneOne: 0,
-                paneTwo: 0
+                paneOne: null
             }
         };
 
@@ -74,6 +74,7 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         this.getInitPaneSize = this.getInitPaneSize.bind(this);
         this.handleMouseDown = this.handleMouseDown.bind(this);
         this.handleMouseMove = this.handleMouseMove.bind(this);
+        this.handleDraggingEvent = this.handleDraggingEvent.bind(this);
         this.getCalculatedInitSize = this.getCalculatedInitSize.bind(this);
         this.getLayoutBoundingClientRect = this.getLayoutBoundingClientRect.bind(this);
         this.getResizerBoundingClientRect = this.getResizerBoundingClientRect.bind(this);
@@ -86,11 +87,7 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         // add calculation on resize
         window.addEventListener('resize', () => false);
         window.addEventListener('RSSStartDragging', this.getPanesRatio);
-        window.addEventListener('RSSDragging', (evt: any) => {
-            if (!this.state.dragging && this.props.vertical === evt.detail.vertical) {
-                this.getInitPaneSize(this.state.ratio && this.state.ratio.paneOne, '%');
-            }
-        });
+        window.addEventListener('RSSDragging', this.handleDraggingEvent);
     }
 
     handleMouseDown(evt: React.MouseEvent<HTMLDivElement> | any) {
@@ -124,6 +121,9 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         // when button on mouse is released => remove event listeners
         document.removeEventListener('mousemove', this.handleMouseMove);
         document.removeEventListener('mouseup', this.handleMouseUp);
+
+        const event = new CustomEvent('RSSEndDragging');
+        window.dispatchEvent(event);
 
         // clear selection
         unselect();
@@ -170,7 +170,8 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
 
         this.setState({
             primaryPaneSize,
-            secondaryPaneSize
+            secondaryPaneSize,
+            pristine: false
         });
     }
 
@@ -200,7 +201,7 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         const secondaryPaneStyle = {
             flexBasis: `${secondaryPaneSize}px`
         };
-        console.log(this.state);
+
         return (
             <div
                 className={layoutClassName}
@@ -306,6 +307,21 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         return calculatedSize;
     }
 
+    handleDraggingEvent(evt?: any) {
+        const { dragging, ratio, pristine } = this.state;
+        const { vertical } = this.props;
+
+        if (pristine) {
+            // if splitter is untouched use default init proportion
+            return this.getInitPaneSize();
+        }
+
+        if (!dragging && vertical === evt.detail.vertical) {
+            // TODO: check for same splitter group so other splitters won't get resized
+            this.getInitPaneSize(ratio && (ratio.paneOne || 0), '%');
+        }
+    }
+
     // getters
     getLayoutBoundingClientRect() {
         return ReactDOM.findDOMNode(this.layout).getBoundingClientRect();
@@ -318,12 +334,12 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
     getPanesRatio() {
         // get calculated ratio for later use when resize event is fired
         const { vertical } = this.props;
-        const { primaryPaneSize, secondaryPaneSize } = this.state;
+        const { primaryPaneSize } = this.state;
         const layoutSize = vertical ? this.getLayoutBoundingClientRect().width : this.getLayoutBoundingClientRect().height;
+        const resizerSize = vertical ? this.getResizerBoundingClientRect().width : this.getResizerBoundingClientRect().height;
 
         const ratio = {
-            paneOne: ((primaryPaneSize || 0) * 100) / layoutSize,
-            paneTwo: ((secondaryPaneSize || 0) * 100) / layoutSize
+            paneOne: (((primaryPaneSize || 0) + (resizerSize / 2)) * 100) / layoutSize
         };
 
         this.setState({
