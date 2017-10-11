@@ -104,10 +104,12 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         document.addEventListener('mouseup', this.handleMouseUp);
 
         let mouseInResizer = 0;
+        const resizerOffset = this.getResizerBoundingClientRect();
+
         if (this.props.vertical) {
-            mouseInResizer = evt.clientX - evt.target.offsetLeft;
+            mouseInResizer = evt.clientX - resizerOffset.left;
         } else {
-            mouseInResizer = evt.clientY - evt.target.offsetTop;
+            mouseInResizer = evt.clientY - resizerOffset.top;
         }
 
         // clear selection
@@ -145,13 +147,13 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         let secondaryPaneSize = 0;
 
         if (vertical) {
-            primaryPaneSize = evt.clientX - layoutRect.left;
+            primaryPaneSize = evt.clientX - layoutRect.left - (this.state.mouseInResizer || 0);
 
             if (evt.clientX < layoutRect.left || evt.clientX > layoutRect.right) {
                 return;
             }
         } else {
-            primaryPaneSize = evt.clientY - layoutRect.top;
+            primaryPaneSize = evt.clientY - layoutRect.top - (this.state.mouseInResizer || 0);
 
             if (evt.clientY < layoutRect.top || evt.clientY > layoutRect.bottom) {
                 return;
