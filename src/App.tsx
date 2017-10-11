@@ -23,15 +23,10 @@ class App extends React.Component {
                             primaryPaneInitSize="70%"
                             group="splitter"
                         >
-                            <div>
-                                <div>
-                                    asdf
-                                </div>
-                            </div>
-                            <div></div>
+                            <div>Pouze jeden pane</div>
                         </SplitScreen>
                         <SplitScreen
-                            primaryPaneInitSize="150px"
+                            primaryPaneInitSize="50px"
                             group="splitter"
                         >
                             <div>
@@ -39,18 +34,7 @@ class App extends React.Component {
                                     asdf
                                 </div>
                             </div>
-                            <SplitScreen
-                                primaryPaneInitSize="150px"
-                                vertical={false}
-                                group="splitterVertical"
-                            >
-                                <div>
-                                    <div>
-                                        asdf
-                                    </div>
-                                </div>
-                                <div></div>
-                            </SplitScreen>
+                            <div></div>
                         </SplitScreen>
                     </SplitScreen>
                 </SplitScreen>

@@ -5,7 +5,8 @@ import { unselect } from './';
 import './index.css';
 
 // [ ] funkční resize
-// [ ] window resize event listener
+// [x] window resize event listener
+// [x] vyřešit zobrazení pouze jednoho potomka
 // [x] vypočítání šířky primaryPane z primaryPaneInitSize
 // [x] vypočítání poměru stran z primaryPaneInitSize - doladit
 // [ ] post poned resize
@@ -81,6 +82,7 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         this.getInitPaneSize = this.getInitPaneSize.bind(this);
         this.handleMouseDown = this.handleMouseDown.bind(this);
         this.handleMouseMove = this.handleMouseMove.bind(this);
+        this.getChildrenCount = this.getChildrenCount.bind(this);
         this.handleResizeEvent = this.handleResizeEvent.bind(this);
         this.handleDraggingEvent = this.handleDraggingEvent.bind(this);
         this.getCalculatedInitSize = this.getCalculatedInitSize.bind(this);
@@ -91,11 +93,11 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
     componentDidMount() {
         // set width of panes
         this.getInitPaneSize();
-        
+
         // add calculation on resize
         window.addEventListener('resize', this.handleResizeEvent);
         window.addEventListener('RSSStartDragging', this.getPanesRatio);
-        window.addEventListener('RSSDragging', this.handleDraggingEvent);
+        window.addEventListener('RSSDragging', (evt: CustomEvent) => this.handleDraggingEvent(evt));
     }
 
     handleMouseDown(evt: React.MouseEvent<HTMLDivElement> | any) {
@@ -103,7 +105,7 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
             return;
         }
 
-        const event = new CustomEvent('RSSStartDragging', {
+        const event: CustomEvent = new CustomEvent('RSSStartDragging', {
             detail: {
                 group: this.props.group
             }
@@ -207,7 +209,7 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
             secondaryPaneSize
         } = this.state;
 
-        const childrenCount = React.Children.count(children);
+        const childrenCount = this.getChildrenCount();
         const layoutClassName = [
             'rss-layout',
             !vertical ? 'rss-horizontal' : null,
@@ -253,39 +255,51 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
                             {children[1]}
                         </SplitPane>
                     ]
-                    : <SplitPane>{children && children[0]}</SplitPane>
+                    : <SplitPane
+                        key={'rss-pane-single'}
+                        style={primaryPaneStyle}
+                    >
+                        {children && children[0]}
+                    </SplitPane>
                 }
             </div>
         );
     }
 
-    // get init width of pane (componentDidMount)
+    // get init width of pane (componentDidMount), or call on custom resize event
     getInitPaneSize(size?: number, ext?: string) {
         const { primaryPaneInitSize, vertical } = this.props;
+        const childrenCount = this.getChildrenCount();
         const testPX = new RegExp('%', 'gi');
-        let initSize = 0;
-        let sizeExt = '';
+        let initSize = 100;
+        let sizeExt = '%';
 
-        if (typeof primaryPaneInitSize === 'string') {
-            // get size in %
-            if (testPX.test(primaryPaneInitSize)) {
-                sizeExt = '%';
+        if (childrenCount > 1) {
+            if (typeof primaryPaneInitSize === 'string') {
+                // get size in %
+                if (testPX.test(primaryPaneInitSize)) {
+                    sizeExt = '%';
+                } else {
+                    sizeExt = 'px';
+                }
+
+                // get number from string
+                initSize = parseFloat(primaryPaneInitSize);
             } else {
-                sizeExt = 'px';
+                return console.warn('Please provide string for primaryPaneInitSize prop.');
             }
-
-            // get number from string
-            initSize = parseFloat(primaryPaneInitSize);
-        } else {
-            return console.warn('Please provide string for primaryPaneInitSize prop.');
         }
 
         // get calculated width of primary pane
         const primaryPaneSize = this.getCalculatedInitSize(size || initSize, ext || sizeExt);
-        const secondaryPaneSize =
-            vertical
-            ? this.getLayoutBoundingClientRect().width - this.getResizerBoundingClientRect().width - primaryPaneSize
-            : this.getLayoutBoundingClientRect().height - this.getResizerBoundingClientRect().height - primaryPaneSize;
+        let secondaryPaneSize = 0;
+
+        if (childrenCount > 1) {
+            secondaryPaneSize =
+                vertical
+                ? this.getLayoutBoundingClientRect().width - this.getResizerBoundingClientRect().width - primaryPaneSize
+                : this.getLayoutBoundingClientRect().height - this.getResizerBoundingClientRect().height - primaryPaneSize;
+        }
 
         this.setState({
             primaryPaneSize,
@@ -294,15 +308,25 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
     }
 
     getCalculatedInitSize(size: number = 0, type: string = 'px'): number {
-        const getSplitterSize = this.getLayoutBoundingClientRect();
         const { vertical } = this.props;
+        const childrenCount = this.getChildrenCount();
+        const getSplitterSize = this.getLayoutBoundingClientRect();
         let calculatedSize = 0;
+        let resizerSize = 0;
+
+        if (childrenCount > 1) {
+            if (vertical) {
+                resizerSize = this.getResizerBoundingClientRect().width / 2;
+            } else {
+                resizerSize = this.getResizerBoundingClientRect().height / 2;
+            }
+        }
 
         if (type === '%') {
             // get calculated primary pane width from percentage
             calculatedSize = vertical
-            ? (getSplitterSize.width * (size / 100)) - (this.getResizerBoundingClientRect().width / 2)
-            : (getSplitterSize.height * (size / 100)) - (this.getResizerBoundingClientRect().height / 2);
+            ? (getSplitterSize.width * (size / 100)) - resizerSize
+            : (getSplitterSize.height * (size / 100)) - resizerSize;
         }
 
         if (type === 'px') {
@@ -328,16 +352,16 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
     }
 
     // event handlers
-    handleDraggingEvent(evt?: any) {
+    handleDraggingEvent(evt?: CustomEvent) {
         const { dragging, ratio, pristine } = this.state;
         const { vertical } = this.props;
 
-        if (pristine) {
+        if (pristine || !evt) {
             // if splitter is untouched use default init proportion
             return this.getInitPaneSize();
         }
 
-        if (!dragging && (this.props.group === evt.group)) {
+        if (!dragging && (this.props.group === evt.detail.group)) {
             if (vertical === evt.detail.vertical) {
                 // TODO: check for same splitter group so other splitters won't get resized
                 this.getInitPaneSize(ratio && (ratio.paneOne || 0), '%');
@@ -356,21 +380,17 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         return this.getInitPaneSize((ratio || 0), '%');
     }
 
-    // getters
-    getLayoutBoundingClientRect() {
-        return ReactDOM.findDOMNode(this.layout).getBoundingClientRect();
-    }
-
-    getResizerBoundingClientRect() {
-        return ReactDOM.findDOMNode(this.resizer).getBoundingClientRect();
-    }
-
     getPanesRatio() {
         // get calculated ratio for later use when resize event is fired
+        let resizerSize = 0;
         const { vertical } = this.props;
         const { primaryPaneSize } = this.state;
+        const childrenCount = this.getChildrenCount();
         const layoutSize = vertical ? this.getLayoutBoundingClientRect().width : this.getLayoutBoundingClientRect().height;
-        const resizerSize = vertical ? this.getResizerBoundingClientRect().width : this.getResizerBoundingClientRect().height;
+
+        if (childrenCount > 1) {
+            resizerSize = vertical ? this.getResizerBoundingClientRect().width : this.getResizerBoundingClientRect().height;
+        }
 
         const ratio = {
             paneOne: (((primaryPaneSize || 0) + (resizerSize / 2)) * 100) / layoutSize
@@ -381,5 +401,18 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         });
 
         return ratio;
+    }
+
+    // getters
+    getLayoutBoundingClientRect() {
+        return ReactDOM.findDOMNode(this.layout).getBoundingClientRect();
+    }
+
+    getResizerBoundingClientRect() {
+        return ReactDOM.findDOMNode(this.resizer).getBoundingClientRect();
+    }
+
+    getChildrenCount() {
+        return this.props.children ? React.Children.count(this.props.children) : 0;
     }
 }
