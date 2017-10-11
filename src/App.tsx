@@ -17,11 +17,16 @@ class App extends React.Component {
                         primaryPaneInitSize="300px"
                         vertical={false}
                     >
-                        <div>
+                        <SplitScreen
+                            primaryPaneInitSize="70%"
+                        >
                             <div>
-                                asdf
+                                <div>
+                                    asdf
+                                </div>
                             </div>
-                        </div>
+                            <div></div>
+                        </SplitScreen>
                         <SplitScreen
                             primaryPaneInitSize="150px"
                         >
@@ -30,7 +35,17 @@ class App extends React.Component {
                                     asdf
                                 </div>
                             </div>
-                            <div></div>
+                            <SplitScreen
+                                primaryPaneInitSize="150px"
+                                vertical={false}
+                            >
+                                <div>
+                                    <div>
+                                        asdf
+                                    </div>
+                                </div>
+                                <div></div>
+                            </SplitScreen>
                         </SplitScreen>
                     </SplitScreen>
                 </SplitScreen>

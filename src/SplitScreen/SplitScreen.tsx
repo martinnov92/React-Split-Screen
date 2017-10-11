@@ -6,7 +6,7 @@ import './index.css';
 
 // [ ] funkční resize
 // [x] vypočítání šířky primaryPane z primaryPaneInitSize
-// [x/o] vypočítání poměru stran z primaryPaneInitSize - doladit
+// [x] vypočítání poměru stran z primaryPaneInitSize - doladit
 // [ ] vytvořit funkci v helpers, která bude sloužit na zavolání maximalizace / minimalizace panelu (custom event nebo flux??)
 // [ ] vypočítání max width
 // [ ] zavolání resizu po dokončení resizování
