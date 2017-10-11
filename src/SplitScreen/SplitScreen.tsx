@@ -27,6 +27,10 @@ interface SplitScreenProps {
      */
     primaryPaneMaxSize?: Number;
 
+    /**
+     * @param {string} group Name of the splitter group. Used when resizing
+     */
+    group?: string;
     allowResize?: boolean;
     // class names for layout
     layoutClassName?: string;
