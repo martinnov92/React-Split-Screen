@@ -7,6 +7,7 @@ class App extends React.Component {
             <div className="App">
                 <SplitScreen
                     primaryPaneInitSize="50%"
+                    group="splitter"
                 >
                     <div>
                         <div>
@@ -16,9 +17,11 @@ class App extends React.Component {
                     <SplitScreen
                         primaryPaneInitSize="300px"
                         vertical={false}
+                        group="splitterVertical"
                     >
                         <SplitScreen
                             primaryPaneInitSize="70%"
+                            group="splitter"
                         >
                             <div>
                                 <div>
@@ -29,6 +32,7 @@ class App extends React.Component {
                         </SplitScreen>
                         <SplitScreen
                             primaryPaneInitSize="150px"
+                            group="splitter"
                         >
                             <div>
                                 <div>
@@ -38,6 +42,7 @@ class App extends React.Component {
                             <SplitScreen
                                 primaryPaneInitSize="150px"
                                 vertical={false}
+                                group="splitterVertical"
                             >
                                 <div>
                                     <div>
