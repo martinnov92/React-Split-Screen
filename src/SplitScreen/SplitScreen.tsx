@@ -1,6 +1,7 @@
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 import SplitPane from './SplitPane';
+import Resizer from './Resizer';
 import { unselect } from './';
 import './index.css';
 
@@ -12,7 +13,6 @@ import './index.css';
 // [ ] post poned resize
 // [ ] vytvořit funkci v helpers, která bude sloužit na zavolání maximalizace / minimalizace panelu (custom event nebo flux??)
 // [ ] vypočítání max width
-// [ ] zavolání resizu po dokončení resizování
 // [ ] vytvoření custom eventy, na kterou budou moci reagovat ostatní komponenty v aplikaci
 // [ ] možnost zaklapnutí splitteru (přes custom eventu?, nebo přes metodu a ref?)
 
@@ -35,6 +35,8 @@ interface SplitScreenProps {
      */
     group?: string;
     allowResize?: boolean;
+    postPoned?: boolean;
+
     // class names for layout
     layoutClassName?: string;
     primaryPaneClassName?: string;
@@ -46,6 +48,7 @@ interface SplitScreenState {
     primaryPaneSize?: number;
     secondaryPaneSize?: number;
     mouseInResizer?: number;
+    postPonedPosition?: number;
     dragging?: boolean;
     pristine?: boolean;
     ratio?: {
@@ -57,11 +60,12 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
     static defaultProps = {
         vertical: true,
         allowResize: true,
+        postPoned: false,
         primaryPaneInitSize: '50%'
     };
 
     layout: HTMLDivElement;
-    resizer: HTMLDivElement;
+    resizer: Resizer;
 
     constructor() {
         super();
@@ -70,6 +74,7 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
             mouseInResizer: 0,
             primaryPaneSize: 0,
             secondaryPaneSize: 0,
+            postPonedPosition: 0,
             dragging: false,
             pristine: true,
             ratio: {
@@ -98,6 +103,7 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         window.addEventListener('resize', this.handleResizeEvent);
         window.addEventListener('RSSStartDragging', this.getPanesRatio);
         window.addEventListener('RSSDragging', (evt: CustomEvent) => this.handleDraggingEvent(evt));
+        window.addEventListener('RSSEndDragging', () => console.log('RSSplitter - End dragging'));
     }
 
     handleMouseDown(evt: React.MouseEvent<HTMLDivElement> | any) {
@@ -130,25 +136,6 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         this.setState({
             dragging: true,
             mouseInResizer
-        });
-    }
-
-    handleMouseUp(evt: MouseEvent) {
-        // when button on mouse is released => remove event listeners
-        document.removeEventListener('mousemove', this.handleMouseMove);
-        document.removeEventListener('mouseup', this.handleMouseUp);
-
-        const event = new CustomEvent('RSSEndDragging', {
-            detail: {
-                group: this.props.group
-            }
-        });
-        window.dispatchEvent(event);
-
-        // clear selection
-        unselect();
-        this.setState({
-            dragging: false
         });
     }
 
@@ -191,16 +178,36 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         window.dispatchEvent(event);
 
         this.setState({
-            primaryPaneSize,
+            primaryPaneSize: primaryPaneSize,
             secondaryPaneSize,
             pristine: false
         });
     }
 
+    handleMouseUp(evt: MouseEvent) {
+        // when button on mouse is released => remove event listeners
+        document.removeEventListener('mousemove', this.handleMouseMove);
+        document.removeEventListener('mouseup', this.handleMouseUp);
+
+        const event = new CustomEvent('RSSEndDragging', {
+            detail: {
+                group: this.props.group
+            }
+        });
+        window.dispatchEvent(event);
+
+        // clear selection
+        unselect();
+        this.setState({
+            dragging: false
+        });
+    }
+
     render() {
         const {
+            vertical,
             children,
-            vertical
+            postPoned
         } = this.props;
 
         const {
@@ -209,6 +216,7 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
             secondaryPaneSize
         } = this.state;
 
+        let postPonedResizer = {};
         const childrenCount = this.getChildrenCount();
         const layoutClassName = [
             'rss-layout',
@@ -223,6 +231,15 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         const secondaryPaneStyle = {
             flexBasis: `${secondaryPaneSize}px`
         };
+
+        if (postPoned) {
+            postPonedResizer = {
+                position: 'absolute',
+                opacity: .5,
+                [vertical ? 'left' : 'top']: `${primaryPaneSize}px`,
+                backgroundColor: 'red'
+            };
+        }
 
         return (
             <div
@@ -239,14 +256,11 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
                             {children[0]}
                         </SplitPane>,
 
-                        <div
+                        <Resizer
                             key={'rss-resizer'}
-                            className={`rss-resizer`}
-                            ref={(div: HTMLDivElement) => this.resizer = div}
+                            ref={(div: Resizer) => this.resizer = div}
                             onMouseDown={this.handleMouseDown}
-                        >
-                            <div className="rss-resizer--drag" />
-                        </div>,
+                        />,
 
                         <SplitPane
                             key={'pane-2'}
@@ -261,6 +275,12 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
                     >
                         {children && children[0]}
                     </SplitPane>
+                }
+
+                {
+                    postPoned && dragging
+                    ? <Resizer style={postPonedResizer} />
+                    : null
                 }
             </div>
         );
@@ -363,7 +383,6 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
 
         if (!dragging && (this.props.group === evt.detail.group)) {
             if (vertical === evt.detail.vertical) {
-                // TODO: check for same splitter group so other splitters won't get resized
                 this.getInitPaneSize(ratio && (ratio.paneOne || 0), '%');
             }
         }
