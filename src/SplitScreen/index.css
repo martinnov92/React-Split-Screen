@@ -61,6 +61,6 @@
     border-right: 0;
 }
 
-.rss-layout--postponed .rss-resizer:not(.rss-resizer--postponed) {
+.rss-layout--postponed > .rss-resizer:not(.rss-resizer--postponed) {
     opacity: .5;
 }
