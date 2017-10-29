@@ -11,7 +11,7 @@ import './index.css';
 // [x] vypočítání šířky primaryPane z primaryPaneInitSize
 // [x] vypočítání poměru stran z primaryPaneInitSize - doladit
 // [x] post poned resize
-// [ ] zkontrolovat, jak se splitter chová pouze s jedním panelem
+// [x] zkontrolovat, jak se splitter chová pouze s jedním panelem
 // [ ] vytvořit funkci v helpers, která bude sloužit na zavolání maximalizace / minimalizace panelu (custom event nebo flux??)
 // [ ] vypočítání max width
 // [ ] vytvoření custom eventy, na kterou budou moci reagovat ostatní komponenty v aplikaci
@@ -272,7 +272,7 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
                         key={'rss-pane-single'}
                         style={primaryPaneStyle}
                     >
-                        {children && children[0]}
+                        {children && children}
                     </SplitPane>
                 }
 

@@ -11,10 +11,14 @@ export default class Resizer extends React.PureComponent<ResizerProps, {}> {
 
     render() {
         const { className } = this.props;
+        const classNames = [
+            'rss-resizer',
+            className
+        ].filter((cls) => cls).join(' ');
 
         return (
             <div
-                className={`rss-resizer ${className}`}
+                className={classNames}
                 ref={(div: HTMLDivElement) => this.resizer = div}
                 onMouseDown={this.props.onMouseDown}
                 style={this.props.style}
