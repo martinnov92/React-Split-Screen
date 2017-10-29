@@ -10,7 +10,8 @@ import './index.css';
 // [x] vyřešit zobrazení pouze jednoho potomka
 // [x] vypočítání šířky primaryPane z primaryPaneInitSize
 // [x] vypočítání poměru stran z primaryPaneInitSize - doladit
-// [ ] post poned resize
+// [x] post poned resize
+// [ ] zkontrolovat, jak se splitter chová pouze s jedním panelem
 // [ ] vytvořit funkci v helpers, která bude sloužit na zavolání maximalizace / minimalizace panelu (custom event nebo flux??)
 // [ ] vypočítání max width
 // [ ] vytvoření custom eventy, na kterou budou moci reagovat ostatní komponenty v aplikaci
@@ -91,6 +92,7 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         this.handleResizeEvent = this.handleResizeEvent.bind(this);
         this.handleDraggingEvent = this.handleDraggingEvent.bind(this);
         this.getCalculatedInitSize = this.getCalculatedInitSize.bind(this);
+        this.getPaneSizesWhileDragging = this.getPaneSizesWhileDragging.bind(this);
         this.getLayoutBoundingClientRect = this.getLayoutBoundingClientRect.bind(this);
         this.getResizerBoundingClientRect = this.getResizerBoundingClientRect.bind(this);
     }
@@ -123,19 +125,22 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         document.addEventListener('mouseup', this.handleMouseUp);
 
         let mouseInResizer = 0;
+        const { vertical } = this.props;
         const resizerOffset = this.getResizerBoundingClientRect();
-
+        
         if (this.props.vertical) {
             mouseInResizer = evt.clientX - resizerOffset.left;
         } else {
             mouseInResizer = evt.clientY - resizerOffset.top;
         }
 
+        const res = this.getPaneSizesWhileDragging(evt, vertical || false, mouseInResizer);
         // clear selection
         unselect();
         this.setState({
             dragging: true,
-            mouseInResizer
+            mouseInResizer,
+            postPonedPosition: res && res.primaryPaneSize || 0
         });
     }
 
@@ -143,31 +148,13 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         // clear selection
         unselect();
 
-        const { vertical } = this.props;
-        // const { mouseInResizer } = this.state;
-        const layoutRect = this.getLayoutBoundingClientRect();
-        const resizerRect = this.getResizerBoundingClientRect();
-        const mouseInResizer = this.state.mouseInResizer || 0;
-        let primaryPaneSize = 0;
-        let secondaryPaneSize = 0;
+        const { mouseInResizer } = this.state;
+        const { vertical, postPoned } = this.props;
+        const res = this.getPaneSizesWhileDragging(evt, vertical || false, mouseInResizer);
 
-        if (vertical) {
-            primaryPaneSize = evt.clientX - layoutRect.left - mouseInResizer;
-
-            if (evt.clientX < layoutRect.left || evt.clientX > layoutRect.right) {
-                return;
-            }
-        } else {
-            primaryPaneSize = evt.clientY - layoutRect.top - mouseInResizer;
-
-            if (evt.clientY < layoutRect.top || evt.clientY > layoutRect.bottom) {
-                return;
-            }
+        if (!res) {
+            return;
         }
-
-        secondaryPaneSize = vertical
-        ? layoutRect.width - resizerRect.width - primaryPaneSize
-        : layoutRect.height - resizerRect.height - primaryPaneSize;
 
         const event = new CustomEvent('RSSDragging', {
             detail: {
@@ -177,11 +164,18 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         });
         window.dispatchEvent(event);
 
-        this.setState({
-            primaryPaneSize: primaryPaneSize,
-            secondaryPaneSize,
-            pristine: false
-        });
+        if (postPoned) {
+            this.setState({
+                postPonedPosition: res.primaryPaneSize,
+                pristine: false
+            });
+        } else {
+            this.setState({
+                primaryPaneSize: res.primaryPaneSize,
+                secondaryPaneSize: res.secondaryPaneSize,
+                pristine: false
+            });
+        }
     }
 
     handleMouseUp(evt: MouseEvent) {
@@ -189,9 +183,12 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         document.removeEventListener('mousemove', this.handleMouseMove);
         document.removeEventListener('mouseup', this.handleMouseUp);
 
+        const { vertical, group } = this.props;
+        const { mouseInResizer } = this.state;
+        const res = this.getPaneSizesWhileDragging(evt, vertical || false, mouseInResizer);
         const event = new CustomEvent('RSSEndDragging', {
             detail: {
-                group: this.props.group
+                group: group
             }
         });
         window.dispatchEvent(event);
@@ -199,7 +196,9 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         // clear selection
         unselect();
         this.setState({
-            dragging: false
+            dragging: false,
+            primaryPaneSize: res && res.primaryPaneSize,
+            secondaryPaneSize: res && res.secondaryPaneSize
         });
     }
 
@@ -213,7 +212,8 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         const {
             dragging,
             primaryPaneSize,
-            secondaryPaneSize
+            secondaryPaneSize,
+            postPonedPosition
         } = this.state;
 
         let postPonedResizer = {};
@@ -221,7 +221,8 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         const layoutClassName = [
             'rss-layout',
             !vertical ? 'rss-horizontal' : null,
-            dragging ? 'rss-layout-dragging' : null
+            dragging ? 'rss-layout-dragging' : null,
+            postPoned && dragging ? 'rss-layout--postponed' : null
         ].filter((className) => className !== null).join(' ');
 
         const primaryPaneStyle = {
@@ -235,9 +236,7 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         if (postPoned) {
             postPonedResizer = {
                 position: 'absolute',
-                opacity: .5,
-                [vertical ? 'left' : 'top']: `${primaryPaneSize}px`,
-                backgroundColor: 'red'
+                [vertical ? 'left' : 'top']: `${postPonedPosition}px`
             };
         }
 
@@ -279,7 +278,10 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
 
                 {
                     postPoned && dragging
-                    ? <Resizer style={postPonedResizer} />
+                    ? <Resizer
+                        style={postPonedResizer}
+                        className={`rss-resizer--postponed`}
+                    />
                     : null
                 }
             </div>
@@ -420,6 +422,38 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         });
 
         return ratio;
+    }
+
+    getPaneSizesWhileDragging(evt: any, vertical: boolean, mouseInResizer: number = 0):
+    { primaryPaneSize: number, secondaryPaneSize: number } | undefined
+    {
+        let primaryPaneSize = 0;
+        let secondaryPaneSize = 0;
+        const layoutRect = this.getLayoutBoundingClientRect();
+        const resizerRect = this.getResizerBoundingClientRect();
+
+        if (vertical) {
+            primaryPaneSize = evt.clientX - layoutRect.left - mouseInResizer;
+
+            if (evt.clientX < layoutRect.left || evt.clientX > layoutRect.right) {
+                return;
+            }
+        } else {
+            primaryPaneSize = evt.clientY - layoutRect.top - mouseInResizer;
+
+            if (evt.clientY < layoutRect.top || evt.clientY > layoutRect.bottom) {
+                return;
+            }
+        }
+
+        secondaryPaneSize = vertical
+        ? layoutRect.width - resizerRect.width - primaryPaneSize
+        : layoutRect.height - resizerRect.height - primaryPaneSize;
+
+        return {
+            primaryPaneSize,
+            secondaryPaneSize
+        };
     }
 
     // getters

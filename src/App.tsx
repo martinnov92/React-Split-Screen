@@ -24,7 +24,8 @@ class App extends React.Component {
                             primaryPaneInitSize="70%"
                             group="splitter"
                         >
-                            <div>Pouze jeden pane</div>
+                            <div className="shadow">ksjflajsdflkj</div>
+                            <div className="shadow">ksjflajsdflkj</div>
                         </SplitScreen>
                         <SplitScreen
                             primaryPaneInitSize="50px"
