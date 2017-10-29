@@ -12,8 +12,9 @@ import './index.css';
 // [x] vypočítání poměru stran z primaryPaneInitSize - doladit
 // [x] post poned resize
 // [x] zkontrolovat, jak se splitter chová pouze s jedním panelem
-// [ ] vytvořit funkci v helpers, která bude sloužit na zavolání maximalizace / minimalizace panelu (custom event nebo flux??)
+// [ ] vytvořit funkci v helpers, která bude sloužit na zavolání maximalizace / minimalizace panelu (custom event)
 // [ ] vypočítání max width
+// [ ] při puštění myši mimo splitter nastavit správnou velikost místo uskočení splitteru na poslední správnou pozici
 // [ ] vytvoření custom eventy, na kterou budou moci reagovat ostatní komponenty v aplikaci
 // [ ] možnost zaklapnutí splitteru (přes custom eventu, nebo přes metodu a ref)
 
@@ -37,6 +38,19 @@ interface SplitScreenProps {
     group?: string;
     allowResize?: boolean;
     postPoned?: boolean;
+
+    /**
+     * @param {function} onDragStart
+     */
+    onDragStart?: () => void;
+    /**
+     * @param {function} onDrag
+     */
+    onDrag?: () => void;
+    /**
+     * @param {function} onDragEnd
+     */
+    onDragEnd?: () => void;
 
     // class names for layout
     layoutClassName?: string;
