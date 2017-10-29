@@ -15,7 +15,7 @@ import './index.css';
 // [ ] vytvořit funkci v helpers, která bude sloužit na zavolání maximalizace / minimalizace panelu (custom event nebo flux??)
 // [ ] vypočítání max width
 // [ ] vytvoření custom eventy, na kterou budou moci reagovat ostatní komponenty v aplikaci
-// [ ] možnost zaklapnutí splitteru (přes custom eventu?, nebo přes metodu a ref?)
+// [ ] možnost zaklapnutí splitteru (přes custom eventu, nebo přes metodu a ref)
 
 interface SplitScreenProps {
     /**
