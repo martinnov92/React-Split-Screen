@@ -1,8 +1,8 @@
 import * as React from 'react';
 
 interface ResizerProps {
-    onMouseDown?: (e?: any) => void;
-    style?: any;
+    onMouseDown?: (e?: React.SyntheticEvent<HTMLDivElement>) => void;
+    style?: object;
     className?: string;
 }
 

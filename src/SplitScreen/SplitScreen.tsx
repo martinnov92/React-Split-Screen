@@ -108,7 +108,7 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         window.addEventListener('RSSEndDragging', () => console.log('RSSplitter - End dragging'));
     }
 
-    handleMouseDown(evt: React.MouseEvent<HTMLDivElement> | any) {
+    handleMouseDown(evt: React.MouseEvent<HTMLDivElement>) {
         if (evt.button === 2 || !this.props.allowResize) {
             return;
         }
@@ -407,10 +407,12 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
         const { vertical } = this.props;
         const { primaryPaneSize } = this.state;
         const childrenCount = this.getChildrenCount();
-        const layoutSize = vertical ? this.getLayoutBoundingClientRect().width : this.getLayoutBoundingClientRect().height;
+        const layoutSize =
+            vertical ? this.getLayoutBoundingClientRect().width : this.getLayoutBoundingClientRect().height;
 
         if (childrenCount > 1) {
-            resizerSize = vertical ? this.getResizerBoundingClientRect().width : this.getResizerBoundingClientRect().height;
+            resizerSize =
+                vertical ? this.getResizerBoundingClientRect().width : this.getResizerBoundingClientRect().height;
         }
 
         const ratio = {
@@ -425,8 +427,7 @@ export default class SplitScreen extends React.Component<SplitScreenProps, Split
     }
 
     getPaneSizesWhileDragging(evt: any, vertical: boolean, mouseInResizer: number = 0):
-    { primaryPaneSize: number, secondaryPaneSize: number } | undefined
-    {
+    { primaryPaneSize: number, secondaryPaneSize: number } | undefined {
         let primaryPaneSize = 0;
         let secondaryPaneSize = 0;
         const layoutRect = this.getLayoutBoundingClientRect();
