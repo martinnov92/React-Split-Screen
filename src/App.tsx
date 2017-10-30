@@ -7,6 +7,7 @@ class App extends React.Component {
             <div className="App">
                 <SplitScreen
                     primaryPaneInitSize="50%"
+                    primaryPaneMaxSize="80%"
                     group="splitter"
                 >
                     <div>
@@ -16,6 +17,7 @@ class App extends React.Component {
                     </div>
                     <SplitScreen
                         primaryPaneInitSize="300px"
+                        primaryPaneMaxSize="350px"
                         vertical={false}
                         group="splitterVertical"
                         postPoned
