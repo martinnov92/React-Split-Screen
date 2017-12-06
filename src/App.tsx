@@ -20,7 +20,7 @@ class App extends React.Component {
                         primaryPaneMaxSize="350px"
                         vertical={false}
                         group="splitterVertical"
-                        postPoned
+                        postPoned={true}
                     >
                         <SplitScreen>
                             <div className="shadow">ksjflajsdflkj</div>
@@ -28,14 +28,14 @@ class App extends React.Component {
                         <SplitScreen
                             primaryPaneInitSize="50px"
                             group="splitter"
-                            postPoned
+                            postPoned={true}
                         >
                             <div>
                                 <div>
                                     asdf
                                 </div>
                             </div>
-                            <div></div>
+                            <div />
                         </SplitScreen>
                     </SplitScreen>
                 </SplitScreen>
